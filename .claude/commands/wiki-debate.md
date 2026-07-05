@@ -10,7 +10,7 @@ argument-hint: "<topic>" [--rounds=N]
 2. Parse `$ARGUMENTS` for the topic and optional `--rounds` (default: 2: opening + rebuttal).
 3. Check whether a matching note already exists in `01-Research/` (same slug or close topic match). Load the key from `.env` in the same shell command: `KEY=$(grep -E '^OBSIDIAN_API_KEY=' .env | cut -d= -f2-); curl -H "Authorization: Bearer $KEY" http://localhost:27123/vault/01-Research/`. If found, read it and use it as shared context for all providers, and note the relationship for step 6.
 4. Run the debate:
-   - Each active provider (Claude, Codex, Gemini) states an explicit position (not just a description).
+   - Each active provider (Claude, Codex, GLM) states an explicit position (not just a description).
    - For each additional round, providers respond directly to the other providers' previous points (rebuttals) — this is where blind spots should surface.
    - After the final round, attempt synthesis. Only write a `## ✅ Consensus Synthesis` if the positions genuinely converged; otherwise list each open disagreement under `## 🚧 Unresolved Points`.
 5. Build the note with the same required frontmatter as research notes, but `type: debate`.

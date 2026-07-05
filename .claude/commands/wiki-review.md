@@ -9,7 +9,7 @@ argument-hint: "<vault-path>" [--strict]
 1. Read `CLAUDE.md` and follow its Write Zones / Output Format rules.
 2. Parse `$ARGUMENTS` for the note path (e.g. `01-Research/semantic-caching-llms.md`) and the optional `--strict` flag.
 3. Fetch the note's current content. Load the key from `.env` in the same shell command: `KEY=$(grep -E '^OBSIDIAN_API_KEY=' .env | cut -d= -f2-); curl -H "Authorization: Bearer $KEY" http://localhost:27123/vault/<path>`. Reuse `$KEY` for the PUT saves in steps 7-8.
-4. Run a structured review with Claude and Codex (Gemini optional):
+4. Run a structured review with Claude and Codex (GLM optional):
    - Check technical accuracy, completeness, and internal consistency of each section.
    - If `--strict` is set, flag every factual claim that cannot be independently confirmed with `[VERIFY]` in a dedicated "Action Items" section — do not silently accept unverifiable claims.
 5. Compute a `review_score` (0-100) reflecting the reviewers' confidence in the note as-is.

@@ -26,7 +26,7 @@ Every agent-written note must start with this frontmatter:
 title: ""
 date: YYYY-MM-DD
 type: research | debate | review
-agents: [claude, codex, gemini]
+agents: [claude, codex, glm]
 consensus_score: 0-100
 status: draft | reviewed | published
 ---
@@ -39,8 +39,8 @@ Each agent signs its own section in the body:
 ## 🔴 Codex - [section name]
 [Codex's contribution]
 
-## 🟡 Gemini - [section name]
-[Gemini's contribution]
+## 🟣 GLM - [section name]
+[GLM's contribution]
 
 ## ✅ Consensus Synthesis
 [only written if consensus_score >= 75]
@@ -51,6 +51,14 @@ At the start of each session:
 1. Read 00-Inbox/ for pending items
 2. Read the last 3 notes in 01-Research/ for context continuity
 3. Check 02-Debates/ for unresolved debates (status: draft)
+
+## Secrets Safety
+
+Every curl call in this vault sends an `Authorization` header (Obsidian REST API key,
+`OPENROUTER_API_KEY`, etc.). **Never use `-v`/`--verbose` or any flag that echoes request
+headers on these calls** — it prints the key in plaintext to the terminal/transcript. Use
+`-s`/`--silent` only. If a call needs debugging, inspect the response body/HTTP status
+code, not `-v`. If a key is ever exposed this way, rotate it immediately.
 
 ## Translation
 
