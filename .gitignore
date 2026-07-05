@@ -1,0 +1,12 @@
+# --- Secrets: never commit (public repo) ---
+.env
+.obsidian/plugins/
+
+# --- Obsidian local/session state ---
+.obsidian/workspace*.json
+
+# --- Octopus runtime residue (plugin removed) ---
+.claude-octopus/
+
+# --- Third-party source article (Medium clipping) — kept local, not published ---
+Your Vault as a Shared Brain*
