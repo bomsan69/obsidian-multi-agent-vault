@@ -1,5 +1,11 @@
 # Obsidian Multi-Agent Vault
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Obsidian](https://img.shields.io/badge/Obsidian-vault-7c3aed?logo=obsidian&logoColor=white)](https://obsidian.md)
+![Claude Code](https://img.shields.io/badge/Claude%20Code-plugin--free-orange)
+![Providers](https://img.shields.io/badge/agents-Claude%20%C2%B7%20Codex%20%C2%B7%20Gemini-blue)
+[![GitHub stars](https://img.shields.io/github/stars/bomsan69/obsidian-multi-agent-vault?style=social)](https://github.com/bomsan69/obsidian-multi-agent-vault/stargazers)
+
 A local **Obsidian knowledge vault** where **Claude, Codex, and Gemini** research, debate,
 and review notes — then a human curates what gets published. No orchestration plugin, no
 lock-in: just plain `.md` files, the Obsidian Local REST API, and four slash commands.
