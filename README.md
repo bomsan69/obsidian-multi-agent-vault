@@ -134,6 +134,25 @@ Background & design rationale: **[`blog-verified-second-brain.md`](blog-verified
 
 ---
 
+## Example notes
+
+Real research/debate/review threads generated in this vault, showing how the pieces link together:
+
+**LoRA vs QLoRA fine-tuning**
+- [Research](01-Research/lora-vs-qlora-fine-tuning-tradeoffs.md) · [Review](03-Reviews/lora-vs-qlora-fine-tuning-tradeoffs-review.md) · [Korean translation](04_korean/lora-vs-qlora-fine-tuning-tradeoffs.md)
+
+**RAG for small corpora (prompt-stuffing vs vector store)**
+- [Research](01-Research/rag-prompt-stuffing-vs-vector-store-small-corpus.md) · [Review](03-Reviews/rag-prompt-stuffing-vs-vector-store-small-corpus-review.md)
+- [Debate: crossover criterion — query volume vs governance gate](02-Debates/rag-crossover-criterion-query-volume-vs-governance.md) · [Review](03-Reviews/rag-crossover-criterion-query-volume-vs-governance-review.md)
+- [Applied case: restaurant CS chatbot architecture](02-Debates/restaurant-cs-chatbot-rag-architecture.md)
+- [Follow-up research: grounding verification via structured output](01-Research/grounding-verification-structured-output.md) — first note using GLM (OpenRouter) in place of Gemini
+
+**Local coding models on Intel CPU + AMD GPU Macs**
+- [Research: small open-weight coding models](01-Research/small-open-weight-coding-models-intel-mac-amd-gpu.md)
+- [Debate: qwen2.5-coder:7b vs deepseek-coder:6.7b](02-Debates/qwen-vs-deepseek-coder-radeon-5500m-ollama.md) · [Review](03-Reviews/qwen-vs-deepseek-coder-radeon-5500m-ollama-review.md)
+
+---
+
 ## Honest notes
 
 - **`consensus_score` is a Claude estimate**, not an independent gate — it measures *perspective
