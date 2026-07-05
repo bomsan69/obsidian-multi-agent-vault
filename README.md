@@ -48,6 +48,62 @@ lock-in: just plain `.md` files, the Obsidian Local REST API, and four slash com
 
 ---
 
+## Repository structure
+
+```text
+obsidian-multi-agent-vault/
+├── CLAUDE.md                     # Agent contract — every session reads this first
+├── README.md                     # You are here
+├── GUIDE.md                      # Full setup walkthrough (REST API, providers, commands)
+├── blog-verified-second-brain.md # Background & design rationale
+├── LICENSE                       # MIT
+├── .env.example                  # Copy → .env, add your API keys (.env is git-ignored)
+├── .gitignore
+│
+├── .claude/
+│   └── commands/                 # The four slash commands
+│       ├── wiki-research.md       # /wiki-research → 01-Research/
+│       ├── wiki-debate.md         # /wiki-debate   → 02-Debates/
+│       ├── wiki-review.md         # /wiki-review   → 03-Reviews/
+│       └── translate.md           # /translate     → 04_korean/
+│
+├── 00-Inbox/                     # Human only — raw captures
+├── 01-Research/                  # Agents — research notes
+│   ├── lora-vs-qlora-fine-tuning-tradeoffs.md
+│   └── project-rationale.md
+├── 02-Debates/                   # Agents — debate transcripts
+├── 03-Reviews/                   # Agents — review notes (writes review_score back to source)
+│   └── lora-vs-qlora-fine-tuning-tradeoffs-review.md
+├── 04_korean/                    # Agents — Korean translations
+│   └── lora-vs-qlora-fine-tuning-tradeoffs.md
+├── 05-Published/                 # Human only — curated, final notes
+│
+└── .obsidian/                    # Obsidian config (workspace & plugin secrets are git-ignored)
+```
+
+**Workflow** — agents fan out into the write zones; only a human publishes:
+
+```mermaid
+flowchart LR
+    I["00-Inbox<br/>(human)"] --> R
+
+    subgraph AGENTS["Agents write here"]
+        direction LR
+        R["01-Research<br/>/wiki-research"]
+        D["02-Debates<br/>/wiki-debate"]
+        V["03-Reviews<br/>/wiki-review --strict"]
+        K["04_korean<br/>/translate"]
+        R --> D
+        R --> V
+        D --> V
+        R -.-> K
+    end
+
+    V -->|human curates| P["05-Published<br/>(human only)"]
+```
+
+---
+
 ## Requirements
 
 - [Obsidian](https://obsidian.md) + the **Local REST API** plugin (coddingtonbear, **v4.x**)
