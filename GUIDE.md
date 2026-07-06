@@ -6,14 +6,15 @@
 > **self-contained**: every file you need is inline below — no `git clone` required.
 >
 > **Note:** the original article routed everything through the *Claude Octopus* plugin. This
-> vault instead calls the Codex/Gemini CLIs **directly** from its own `/wiki-*` commands — no
-> plugin dependency. The consensus score is a Claude estimate, and `/wiki-review --strict` is the
-> real fact-check.
+> vault instead calls the Codex CLI directly and GLM via OpenRouter's REST API from its own
+> `/wiki-*` commands — no plugin dependency, no Gemini CLI. The consensus score is a Claude
+> estimate, and `/wiki-review --strict` is the real fact-check.
 
 No language model admits its own blind spots. Claude is excellent at synthesis and
 architecture, but can be overly cautious on technical claims. Codex is surgical at code
-analysis and edge cases, but loses system context. Gemini has broad ecosystem awareness,
-but occasionally favors the Google stack where alternatives are stronger.
+analysis and edge cases, but loses system context. GLM has broad ecosystem awareness,
+but its self-reported specifics (benchmarks, pricing, token counts) need independent
+verification more often than the other two.
 
 The solution isn't to pick one of the three. It's to put all three on the same problem,
 record what each one says, and apply a consensus gate before trusting the result.
@@ -24,7 +25,7 @@ record what each one says, and apply a consensus gate before trusting the result
 2. Installing Obsidian and Creating Your First Vault
 3. The Local REST API Plugin — The Bridge Between Agents and Vault
 4. Installing Claude Code
-5. Adding Codex and Gemini to the Mix
+5. Adding Codex and GLM to the Mix
 6. The Multi-Agent Vault Structure
 7. The CLAUDE.md: The Contract All Agents Obey
 8. The Four Slash Commands
@@ -177,12 +178,14 @@ claude --version
 First run in a folder triggers browser-based sign-in with your Anthropic account.
 
 > **No orchestration plugin required.** This vault does its multi-model fan-out by calling the
-> Codex and Gemini CLIs directly from the `/wiki-*` commands (§8) — there is no external plugin
-> dependency. Claude alone works too; extra providers simply add more independent perspectives.
+> Codex CLI and GLM (via OpenRouter's REST API) directly from the `/wiki-*` commands (§8) — there
+> is no external plugin dependency and no Gemini CLI. Claude alone works too; extra providers
+> simply add more independent perspectives.
 
-## 5. Adding Codex and Gemini to the Mix
+## 5. Adding Codex and GLM to the Mix
 
-Both are optional and authenticate via browser OAuth (no API key).
+Both are optional. Codex authenticates via browser OAuth; GLM needs only an OpenRouter API key
+(no CLI to install).
 
 ### 5.1 Codex (OpenAI)
 
@@ -195,24 +198,38 @@ codex --version
 > The exact underlying model and whether it's included with a given ChatGPT plan varies over
 > time — check OpenAI's current terms rather than assuming a fixed model name.
 
-### 5.2 Gemini CLI (Google)
+### 5.2 GLM (via OpenRouter)
 
-```bash
-npm install -g @google/gemini-cli
-gemini           # first run triggers browser OAuth
-gemini --version
-```
+No CLI install required — GLM is called as a plain REST API.
 
-> The auth flow is interactive on first launch; the exact subcommand may differ by version.
+1. Get an API key at [openrouter.ai/keys](https://openrouter.ai/keys).
+2. Add it to `.env`: `OPENROUTER_API_KEY=...` (see `.env.example`).
+3. Confirm the exact current model slug at [openrouter.ai/models](https://openrouter.ai/models)
+   before relying on it — OpenRouter's model IDs change as providers ship new versions (this
+   guide uses `z-ai/glm-5.2` as of writing).
+
+> Why not Gemini CLI: its free "Gemini Code Assist for individuals" OAuth tier can be blocked
+> outright (`IneligibleTierError`) with no CLI-side fix. OpenRouter sidesteps this — one API
+> key, one REST endpoint, nothing to re-authenticate.
 
 ### 5.3 Verifying providers
 
 ```bash
-codex --version                                  # Codex reachable?
-gemini --skip-trust -p "reply OK" < /dev/null    # Gemini reachable? (needs GEMINI_API_KEY)
+codex --version   # Codex reachable?
+
+# GLM reachable? (needs OPENROUTER_API_KEY in .env)
+KEY=$(grep -E '^OPENROUTER_API_KEY=' .env | cut -d= -f2-)
+curl -s https://openrouter.ai/api/v1/chat/completions \
+  -H "Authorization: Bearer $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "z-ai/glm-5.2", "messages": [{"role": "user", "content": "reply OK"}]}' \
+  | jq -r '.choices[0].message.content'
 ```
 
-With Claude + Codex + Gemini reachable you get three independent perspectives. The `/wiki-*`
+> See `CLAUDE.md` § Secrets Safety — never add `-v`/`--verbose` to this call, it would print
+> the API key in plaintext.
+
+With Claude + Codex + GLM reachable you get three independent perspectives. The `/wiki-*`
 commands dispatch to whichever providers are available and note in the report which ones responded.
 
 ## 6. The Multi-Agent Vault Structure
@@ -285,7 +302,7 @@ Every agent-written note must start with this frontmatter:
 title: ""
 date: YYYY-MM-DD
 type: research | debate | review
-agents: [claude, codex, gemini]
+agents: [claude, codex, glm]
 consensus_score: 0-100
 status: draft | reviewed | published
 ---
@@ -294,7 +311,7 @@ Each agent signs its own section in the body:
 
 ## 🔵 Claude — [section name]
 ## 🔴 Codex — [section name]
-## 🟡 Gemini — [section name]
+## 🟣 GLM — [section name]
 ## ✅ Consensus Synthesis   (only if consensus_score >= 75)
 
 ## Session Start
@@ -319,34 +336,44 @@ from §3.2 — and never push that key to a public repo (§12).
 ---
 command: wiki-research
 description: Multi-agent research, saved directly into the vault's 01-Research/ folder
-argument-hint: "<topic>" [--breadth=light|standard|exhaustive] [--agents=claude,codex,gemini]
+argument-hint: "<topic>" [--breadth=light|standard|exhaustive] [--agents=claude,codex,glm]
 ---
 
 # /wiki-research — Vault-Aware Multi-Agent Research
 
 1. Read `CLAUDE.md` in the current working directory. Follow its Write Zones and Output Format rules exactly.
-2. Parse `$ARGUMENTS` for the topic string plus optional `--breadth` (default: standard) and `--agents` (default: claude,codex,gemini) flags.
+2. Parse `$ARGUMENTS` for the topic string plus optional `--breadth` (default: standard) and `--agents` (default: claude,codex,glm) flags.
 3. Dispatch the topic to each selected provider in parallel:
-   - Claude → overview / architectural framing section
-   - Codex → technical depth section (code, edge cases, benchmarks)
-   - Gemini → ecosystem section (alternatives, recent developments)
+   - Claude → overview / architectural framing section (write this yourself)
+   - Codex → technical depth section (code, edge cases, benchmarks), via CLI: `codex exec --skip-git-repo-check "…" < /dev/null`
+   - GLM → ecosystem section (alternatives, recent developments), via OpenRouter REST API (no CLI needed):
+
+     KEY=$(grep -E '^OPENROUTER_API_KEY=' .env | cut -d= -f2-)
+     curl -s https://openrouter.ai/api/v1/chat/completions \
+       -H "Authorization: Bearer $KEY" \
+       -H "Content-Type: application/json" \
+       -d '{"model": "z-ai/glm-5.2", "messages": [{"role": "user", "content": "…"}]}' \
+       | jq -r '.choices[0].message.content'
    - `light` = 1 round per provider, `standard` = 3 rounds, `exhaustive` = full fan-out
-4. Score convergence across the returned sections (0-100). This is the `consensus_score`.
+   - See `CLAUDE.md` § Secrets Safety — never use `-v`/`--verbose` on curl calls with an `Authorization` header.
+4. Score convergence across the returned sections (0-100). This is the `consensus_score` — a
+   Claude estimate, not an independent gate. Run `/wiki-review --strict` afterward for the real fact-check.
 5. Build the note body using the required frontmatter (title, date, type: research, agents, consensus_score, status).
    status is "reviewed" only if consensus_score >= 75, otherwise "draft".
-   Include one `## 🔵 Claude — ...`, `## 🔴 Codex — ...`, `## 🟡 Gemini — ...` section per provider used.
+   Include one `## 🔵 Claude — ...`, `## 🔴 Codex — ...`, `## 🟣 GLM — ...` section per provider used.
    Add `## ✅ Consensus Synthesis` only when consensus_score >= 75; otherwise a `## ⚠️ Consensus Warning` listing disagreements.
 6. Slugify the topic (lowercase, spaces → hyphens, strip punctuation) to get `<slug>`.
 7. Save the note via the Obsidian Local REST API so Obsidian picks it up immediately:
 
+   KEY=$(grep -E '^OBSIDIAN_API_KEY=' .env | cut -d= -f2-)
    curl -X PUT http://localhost:27123/vault/01-Research/<slug>.md \
-     -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "Authorization: Bearer $KEY" \
      -H "Content-Type: text/markdown" \
      --data-binary @<tmpfile>
 
    If the REST API is unreachable (Obsidian closed), fall back to writing the file directly to
    `01-Research/<slug>.md` and tell the user to reopen Obsidian.
-8. Report: `Consensus: <score>/100 — status: <status> — saved to 01-Research/<slug>.md`.
+8. Report: `Consensus: <score>/100 (estimated) — status: <status> — saved to 01-Research/<slug>.md`.
 
 Never write to `05-Published/`. Never skip the frontmatter.
 ```
@@ -364,18 +391,21 @@ argument-hint: "<topic>" [--rounds=N]
 
 1. Read `CLAUDE.md` and follow its Write Zones / Output Format rules.
 2. Parse `$ARGUMENTS` for the topic and optional `--rounds` (default: 2 = opening + rebuttal).
-3. Check whether a matching note exists in `01-Research/`:
-   curl http://localhost:27123/vault/01-Research/ -H "Authorization: Bearer YOUR_API_KEY"
+3. Check whether a matching note exists in `01-Research/`. Load the key from `.env` in the same
+   shell command:
+   KEY=$(grep -E '^OBSIDIAN_API_KEY=' .env | cut -d= -f2-)
+   curl -H "Authorization: Bearer $KEY" http://localhost:27123/vault/01-Research/
    If found, read it and use it as shared context for all providers.
-4. Run the debate: each provider states an explicit position; each extra round adds rebuttals.
-   After the final round attempt synthesis. Write `## ✅ Consensus Synthesis` only on genuine
-   convergence; otherwise list open items under `## 🚧 Unresolved Points`.
+4. Run the debate: each active provider (Claude, Codex, GLM) states an explicit position; each
+   extra round adds rebuttals. After the final round attempt synthesis. Write
+   `## ✅ Consensus Synthesis` only on genuine convergence; otherwise list open items under
+   `## 🚧 Unresolved Points`.
 5. Build the note with the same required frontmatter, but `type: debate`.
 6. If a related research note was found, add a `[[wikilink]]` backlink in the debate note and
    append a backlink to the debate at the bottom of the research note via the REST API POST endpoint.
 7. Save via REST API PUT to `02-Debates/<slug>.md` (same fallback rule as /wiki-research):
    curl -X PUT http://localhost:27123/vault/02-Debates/<slug>.md \
-     -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "Authorization: Bearer $KEY" \
      -H "Content-Type: text/markdown" --data-binary @<tmpfile>
 8. Report: `Consensus: <score>/100 — status: <status> — saved to 02-Debates/<slug>.md`.
 
@@ -395,9 +425,10 @@ argument-hint: "<vault-path>" [--strict]
 
 1. Read `CLAUDE.md` and follow its Write Zones / Output Format rules.
 2. Parse `$ARGUMENTS` for the note path (e.g. `01-Research/semantic-caching-llms.md`) and optional `--strict`.
-3. Fetch the note's content:
-   curl http://localhost:27123/vault/<path> -H "Authorization: Bearer YOUR_API_KEY"
-4. Run a structured review with Claude and Codex (Gemini optional): check technical accuracy,
+3. Fetch the note's content. Load the key from `.env` in the same shell command:
+   KEY=$(grep -E '^OBSIDIAN_API_KEY=' .env | cut -d= -f2-)
+   curl -H "Authorization: Bearer $KEY" http://localhost:27123/vault/<path>
+4. Run a structured review with Claude and Codex (GLM optional): check technical accuracy,
    completeness, internal consistency. If `--strict`, flag every unverifiable factual claim with
    `[VERIFY]` in a dedicated "Action Items" section.
 5. Compute a `review_score` (0-100).
@@ -471,7 +502,7 @@ consensus_score: 52
 status: draft
 Disagreement points requiring human review:
 - Claude and Codex disagree on optimal cache threshold (0.88 vs 0.95)
-- Gemini suggests managed services; Claude and Codex prefer self-hosted
+- GLM suggests managed services; Claude and Codex prefer self-hosted
 ```
 
 ## 10. Complete Walkthrough
@@ -497,7 +528,7 @@ Expected terminal flow:
 Dispatching to available providers…
   🔵 Claude   → overview…
   🔴 Codex    → technical depth…
-  🟡 Gemini   → ecosystem…
+  🟣 GLM      → ecosystem…
 ⚖️  Consensus (estimated): 82/100
 💾 Saving to vault: 01-Research/semantic-caching-llms.md
 ✅ Done — status: reviewed
@@ -510,7 +541,7 @@ The note appears in Obsidian automatically. Frontmatter includes the `type` fiel
 title: "Semantic Caching for LLMs"
 date: 2026-06-16
 type: research
-agents: [claude, codex, gemini]
+agents: [claude, codex, glm]
 consensus_score: 82
 status: reviewed
 ---
